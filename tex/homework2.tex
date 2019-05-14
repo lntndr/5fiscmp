@@ -1,0 +1,43 @@
+\documentclass[a4paper,11pt]{article}
+% Codifica input output
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% Accorgimenti tipografici
+\usepackage{ebgaramond,newtxmath,ebgaramond-maths}
+\renewcommand*\sfdefault{phv}
+\usepackage{sectsty} \allsectionsfont{\normalfont\sffamily}
+\usepackage{microtype}
+
+% Correzioni per l'italiano
+\usepackage[italian]{babel}
+\usepackage{indentfirst}
+
+\title{Secondo parziale di Fisica Computazionale}
+\author{Claudio Destri}
+\date{31 maggio 2019}
+
+\begin{document}
+
+\maketitle
+
+\section{Problema 1}
+Nell'esercizio 7.12 Moler introduce il concetto di segnatura di una data orbita periodica dell'attrattore strano di Lorenz. Una versione piu` generale di segnatura e` possibile per qualunque orbita, come sequenza di due simboli alternativi ciascuno dei quali specifica attorno a quale punto fisso l'orbita sta compiendo una rivoluzione. Nella cartella extra/odes su elearning c'e` il file lozenzsign.p che contiene un programma che calcola tale sequenza scritta in termini di '0' e di '1', cioe` come sequenza binaria. Il file lozenzsign.m contiene alcune spiegazioni sul suo funzionamento.
+\subsection{Parte 1}
+La prima parte di questo problema consiste nello scrivere un programma equivalente.
+\subsection{Parte 2}
+La seconda parte consiste nel mettere alla prova il programma e caratterizzare quantitativamente come le sequenze binarie che esso produce cambiano al variare del parametro rho attraverso i 4 valori $ [28 99.65 100.5 160 350]$ considerati da Moler in lorenzgui.m, ai quali vanno aggiunti altri valori tra 20 e 28 e tra 28 e 99.65, come ad esempio $ [20 24 25 40 80 95 97]$.
+
+\section{Problema 2}
+\subsection{Parte 1}
+Tenendo conto che il moto browniano in una dimensione corrisponde ad un random walk in due dimensioni (posizione e velocita` nello spazio delle fasi) con opportuni drift e termine stocastico diffusivo, scrivete una funzione, denominata brownian1D.m, che faccia internamente uso di randomwalk.m. Prestate particolare attenzione al caso di condizioni al bordo di tipo riflessivo per il moto browniano, perche` richiedono alcuni aggiustamenti in randomwalk.m. Conviene, ad esempio, introdurre un nuovo campo nella struttura di input, diciamo 'space\_is\_phase\_space' con valori 0 o 1 (falso o vero) per adattare il random walk a riprodurre la riflessione elastica al bordo per il moto browniano.
+\subsection{Parte 2}
+Considerate particelle browniane nello spazio semi-infinito $z>0$, immerse in un fluido stazionario e uniforme ad una certa temperatura T, soggette a gravita` costante g e con condizioni di riflessione elastica sul piano $z=0$. Usate brownian1D.m per simulare l'evoluzione di una distribuzione di particelle che inizialmente e` uniforme nello spazio fino $z=h$ e nulla per $z>h$, ha in $v_x$ and $v_y$ la forma di Maxwell-Boltzmann a temperatura T ed e` concentrata in $v_z=0$. Studiate l'approccio del sistema all'equilibrio statistico, verificando in particolare come la distribuzione all'equilibrio assuma la forma canonica che non dipende ne` dal coefficiente di attrito gamma ne` dall'altezza h. Fornite evidenza quantitativa che questi due parametri determinano invece la rapidita` con la quale viene raggiunto l'equilibrio stesso.
+
+\section{Istruzioni per la consegna}
+Descrivete accuratamente le vostre soluzioni mediante commenti nel testo degli scripts e funzioni.
+Caricate un singolo file nome\_cognome.zip contenente tutto il necessario.
+Anche questo 'compito a casa' può essere svolto in modalità di gruppo, con gruppi non necessariamente uguali a quelli del precedente, ma con le stesse regole, vale a dire:
+il  file nome\_cognome.zip deve contenere un file di testo denominato gruppo.txt che contiene i nominativi di tutti i membri del gruppo. Un gruppo può contenere al massimo quattro partecipanti. Tutti i membri di un gruppo devono caricare il proprio file nome\_cognome.zip che deve avere un contenuto identico, dato che verranno corretti solo gli esercizi di un singolo membro del gruppo.
+
+\end{document}
