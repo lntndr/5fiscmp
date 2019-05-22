@@ -16,12 +16,8 @@ dflt.drift_field = @(t,x)zeros(size(x));
 dflt.random_jumps = @(t,x)randn(size(x));
 dflt.time_step = 0.001;
 dflt.time_span = inf;
-dflt.step_algorithm = 'rk4';
+dflt.step_algorithm = 'euler';
 dflt.plotframe_skips = 0;
-
-% my fields
-dflt.save_evolution = false;
-dflt.space_is_phase_space = false;
 
 %% input handling and checks
 
@@ -31,10 +27,9 @@ if nargin == 0
 end
 
 % fill all missing fields from default
-fname = fieldnames(dflt)
-for jname = 1:length(fname)
-    if ~isfield(in,fname{jname})
-        in.(fname{jname}) = dflt.(fname{jname});
+for fname = fieldnames(dflt)
+    if ~isfield(in,fname)
+        in.(fname) = dflt.(fname);
     end
 end
 
@@ -67,48 +62,7 @@ else
     skip = in.plotframe_skips;
 end
 
-% custom settings short variables
-
-sev = in.save_evolution;
-sps = in.space_is_phase_space;
-
-% custom settings consistency checks
-
-if skip == Inf && nt == Inf
-    error("The function thus set would cause an infinite loop.");
-end
-
 %% main
-
-% setting space phase
-if sps
-    pickbound=@xdotbound;
-    stepper=@phspacestep;
-else
-    pickbound=@xbound;
-    stepper=@spacestep;
-end
-
-% defining variables only in nested function is deprecated in Matlab 2019a
-Io=0;
-Ie=0;
-
-% allocate vector for store time evolution
-if sev
-    register=@writeev;
-    if nt < Inf
-        em=zeros(dim,nt,N); %evolution matrix
-        % Puntatore ad aggiungi punti in posizione ennesima
-    else
-        em=zeros(dim,1,N);
-        warning('WarningTAG:TagName', strcat ( 'The evolution matrix', ...
-        ' is impossible to\n preallocate if the number of step is not', ...
-        ' finite or predefined') );
-        % Puntatore ad accoda matrice in coda
-    end
-else
-    register=@nothing2;
-end
 
 % handle graphics
 if skip < nt
@@ -128,26 +82,24 @@ if skip < nt
 end
 
 jt = 0;
-
 while jt < nt
-    
     t = jt*dt;
-
-    %make a step
-    
-    x=stepper(x);
-    
-    %boundary conditions
+    xnew = feval(in.step_algorithm,B,t,x,dt);
+    x = xnew + sqrt(dt)*rj(t,x);
+    %x = xnew + sqrt(dt)*(xi(t,x) + xi(t+dt,xnew))/2;
     for jdim = 1:dim
-       jo = 2*jdim-1;
-       je = 2*jdim;
-       if mod(jdim,2)
-           x=xbound(x);
-       else
-           x=pickbound(x);
-       end
+        jo = 2*jdim-1;
+        je = 2*jdim;
+        if bc(jo)
+            I = x(:,jdim) < box(jo);
+            x(I,jdim) = -x(I,jdim) + 2*box(jo);
+        end
+        if bc(je)
+            I = x(:,jdim) > box(je);
+            x(I,jdim) = -x(I,jdim) + 2*box(je);
+        end
     end
-       
+    
     if mod(jt+1,skip+1) == 0
         h.XData = x(:,1);
         h.YData = x(:,2);
@@ -161,59 +113,14 @@ while jt < nt
         end
     end
     jt = jt+1;
-    % writes out on a vector
-    em=register(em,x);
 end
 
 out.final_positions = x;
-if sev
-    out.evolution = em;
-end
 out.in = in;
 
 if skip < nt
     set(stop,'string','close','value',0,'callback','close(gcf)')
 end
-
-% Nested functions
-    
-    function x=xbound(x)
-        if bc(jo)
-            Io = x(:,jdim) < box(jo);
-            x(Io,jdim) = -x(Io,jdim) + 2*box(jo);
-        end
-        if bc(je)
-            Ie = x(:,jdim) > box(je);
-            x(Ie,jdim) = -x(Ie,jdim) + 2*box(je);
-        end
-    end
-
-    function x=xdotbound(x)
-        if sum(Io|Ie)>0 % Some particle has bounced and velocities
-            x(Io|Ie,jdim) = -x(Io|Ie,jdim);
-        end
-    end
-
-    function x=spacestep(x)
-        xnew = feval(in.step_algorithm,B,t,x,dt);
-        x = xnew + sqrt(dt)*rj(t,x);
-    end
-
-    function x=phspacestep(x)
-        xpre = x(:,1:2:end);
-        xnxt = feval(in.step_algorithm,B,t,xpre,dt);
-        x(:,1:2:end) = xnxt + sqrt(dt)*rj(t,xpre);
-        %Is a velocity
-        x(:,2:2:end) = (xpre-x(:,1:2:end))./dt;
-    end
-
-    function em=writeev(em,x)
-        em(:,jt,:)=x';
-    end
-
-    function nothing2(~,~)
-        
-    end
 
 end
 
@@ -230,3 +137,4 @@ function yp = rk4(F,t,y,h) %#ok<DEFNU>
     s4 = F(t+h,y+h*s3);
     yp = y + h*(s1 + 2*s2 + 2*s3 + s4)/6;
 end
+
