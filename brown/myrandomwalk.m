@@ -20,7 +20,7 @@ dflt.step_algorithm = 'rk4';
 dflt.plotframe_skips = 0;
 
 % my fields
-dflt.save_evolution = false;
+dflt.write_com_skips = 0;
 dflt.space_is_phase_space = false;
 
 %% input handling and checks
@@ -31,7 +31,7 @@ if nargin == 0
 end
 
 % fill all missing fields from default
-fname = fieldnames(dflt)
+fname = fieldnames(dflt);
 for jname = 1:length(fname)
     if ~isfield(in,fname{jname})
         in.(fname{jname}) = dflt.(fname{jname});
@@ -46,7 +46,7 @@ bc(1:length(in.boundary_conditions)) = in.boundary_conditions;
 
 N = in.number_of_particles;
 x = in.initial_positions;
-if isscalar(x)
+if isscalar(x) && ~isa(x,'function_handle')
     x = x*ones(N,dim); 
 end
 if size(x,1) ~= N
@@ -62,19 +62,19 @@ rj = in.random_jumps;
 dt = in.time_step;
 nt = round(in.time_span/dt);
 if dim ~= 2 && dim ~= 3
-    skip = inf; % do not plot in dimensions other that 2 or 3
+    skipf = inf; % do not plot in dimensions other that 2 or 3
 else
-    skip = in.plotframe_skips;
+    skipf = in.plotframe_skips;
 end
 
 % custom settings short variables
 
-sev = in.save_evolution;
+skipw = in.write_evolution_skips;
 sps = in.space_is_phase_space;
 
 % custom settings consistency checks
 
-if skip == Inf && nt == Inf
+if skipf == Inf && nt == Inf
     error("The function thus set would cause an infinite loop.");
 end
 
@@ -93,25 +93,20 @@ end
 Io=0;
 Ie=0;
 
-% allocate vector for store time evolution
-if sev
+% allocate vector for store center of mass and mean velocity evolution
+if skipw < Inf
     register=@writeev;
     if nt < Inf
-        em=zeros(dim,nt,N); %evolution matrix
-        % Puntatore ad aggiungi punti in posizione ennesima
+        em=zeros(floor(nt/skipw),dim); %evolution matrix
     else
-        em=zeros(dim,1,N);
-        warning('WarningTAG:TagName', strcat ( 'The evolution matrix', ...
-        ' is impossible to\n preallocate if the number of step is not', ...
-        ' finite or predefined') );
-        % Puntatore ad accoda matrice in coda
+        em=zeros(2,dim);
     end
 else
     register=@nothing2;
 end
 
 % handle graphics
-if skip < nt
+if skipf < nt
     shg
     clf
     set(gcf,'numbertitle','off','name','Random walk')
@@ -147,8 +142,11 @@ while jt < nt
            x=pickbound(x);
        end
     end
-       
-    if mod(jt+1,skip+1) == 0
+ 
+    jt = jt+1;
+    % writes out on a vector
+    
+    if mod(jt,skipf) == 0
         h.XData = x(:,1);
         h.YData = x(:,2);
         if dim == 3
@@ -160,18 +158,18 @@ while jt < nt
             break
         end
     end
-    jt = jt+1;
-    % writes out on a vector
-    em=register(em,x);
+    if mod(jt,skipw) == 0
+        em=register(em,x);
+    end
 end
 
 out.final_positions = x;
-if sev
+if skipw < Inf
     out.evolution = em;
 end
 out.in = in;
 
-if skip < nt
+if skipf < nt
     set(stop,'string','close','value',0,'callback','close(gcf)')
 end
 
@@ -200,15 +198,22 @@ end
     end
 
     function x=phspacestep(x)
-        xpre = x(:,1:2:end);
-        xnxt = feval(in.step_algorithm,B,t,xpre,dt);
-        x(:,1:2:end) = xnxt + sqrt(dt)*rj(t,xpre);
-        %Is a velocity
-        x(:,2:2:end) = (xpre-x(:,1:2:end))./dt;
+%         xpre = x(:,1:2:end);
+%         xnxt = feval(in.step_algorithm,B,t,xpre,dt);
+%         %Is a position
+%         x(:,1:2:end) = xnxt + sqrt(dt)*rj(t,xpre);
+%         %Is a velocity
+%         x(:,2:2:end) = (xpre-x(:,1:2:end))./dt;
+          %drift field effects
+          
+          %random jumps effects
+          xb=feval(in.step_algorithm,B,t,x(:,2:2:end),dt);
+          x(:,1:2:end)=x(:,1:2:end)+x(:,2:2:end)*dt;
+          x(:,2:2:end)=xb + sqrt(dt)*rj(t,xb);
     end
 
     function em=writeev(em,x)
-        em(:,jt,:)=x';
+        em(ceil(jt/skipw),:)=mean(x,1);
     end
 
     function nothing2(~,~)
