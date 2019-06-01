@@ -5,7 +5,8 @@ function out = brownian1d(in)
 dflt.number_of_particles = 5e4;
 dflt.viewbox_size = [0 6 -5 5];
 dflt.boundary_conditions = [1 0];
-dflt.initial_positions=@(N)10*rand(N,1);
+dflt.height = 10;
+dflt.initial_positions=@(N,h)h*rand(N,1);
 dflt.initial_velocities=@(N)zeros(N,1);
 dflt.acceleration_field=@(t,x)-ones(size(x));
 dflt.friction_coeff=1;
@@ -68,8 +69,9 @@ end
 N = in.number_of_particles;
 gam = in.friction_coeff;
 D = in.kT_over_mass/gam;
+h = in.height;
 
-in.initial_positions=[feval(in.initial_positions,N), ...
+in.initial_positions=[feval(in.initial_positions,N,h), ...
     feval(in.initial_velocities,N)];
 
 in.drift_field = @(t,x) -gam*x+in.acceleration_field(t,x);

@@ -196,15 +196,7 @@ end
     end
 
     function x=phspacestep(x)
-%         xpre = x(:,1:2:end);
-%         xnxt = feval(in.step_algorithm,B,t,xpre,dt);
-%         %Is a position
-%         x(:,1:2:end) = xnxt + sqrt(dt)*rj(t,xpre);
-%         %Is a velocity
-%         x(:,2:2:end) = (xpre-x(:,1:2:end))./dt;
-          %drift field effects
-          
-          %random jumps effects
+        
           xb=feval(in.step_algorithm,B,t,x(:,2:2:end),dt);
           x(:,1:2:end)=x(:,1:2:end)+x(:,2:2:end)*dt;
           x(:,2:2:end)=xb + sqrt(dt)*rj(t,xb);
