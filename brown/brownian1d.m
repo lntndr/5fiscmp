@@ -12,10 +12,10 @@ dflt.friction_coeff=1;
 dflt.kT_over_mass=1;
 dflt.random_kicks=@(t,x)randn(size(x));
 dflt.time_step=1e-3;
-dflt.time_span=10;
+dflt.time_span=60;
 dflt.step_algorithm='rk4';
-dflt.plotframe_skips = 20;
-dflt.write_evolution_skips = 20;
+dflt.plotframe_skips = 24;
+dflt.write_evolution_skips = 0;
 
 % input handling and checks
 
@@ -67,16 +67,13 @@ end
 
 N = in.number_of_particles;
 gam = in.friction_coeff;
-kmT = in.kT_over_mass;
-D = kmT/gam;
+D = in.kT_over_mass/gam;
 
 in.initial_positions=[feval(in.initial_positions,N), ...
     feval(in.initial_velocities,N)];
 
 in.drift_field = @(t,x) -gam*x+in.acceleration_field(t,x);
-in.random_jumps = @(t,x) sqrt(2*D)*gam*randn(size(x));
-
-disp("C'è solo l'Inter");
+in.random_jumps = @(t,x) sqrt(2*D)*gam*in.random_kicks(t,x);
 
 out = myrandomwalk(in);
 

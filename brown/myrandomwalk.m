@@ -97,7 +97,7 @@ Ie=0;
 if skipw < Inf
     register=@writeev;
     if nt < Inf
-        em=zeros(floor(nt/skipw),dim); %evolution matrix
+        em=zeros(floor(nt/(skipw+1)),dim); %evolution matrix
     else
         em=zeros(2,dim);
     end
@@ -127,10 +127,6 @@ jt = 0;
 while jt < nt
     
     t = jt*dt;
-
-    %make a step
-    
-    x=stepper(x);
     
     %boundary conditions
     for jdim = 1:dim
@@ -142,11 +138,7 @@ while jt < nt
            x=pickbound(x);
        end
     end
- 
-    jt = jt+1;
-    % writes out on a vector
-    
-    if mod(jt,skipf) == 0
+        if mod(jt+1,skipf+1) == 0
         h.XData = x(:,1);
         h.YData = x(:,2);
         if dim == 3
@@ -158,9 +150,15 @@ while jt < nt
             break
         end
     end
-    if mod(jt,skipw) == 0
+    if mod(jt+1,skipw+1) == 0
         em=register(em,x);
     end
+    
+    %make a step
+    
+    x=stepper(x);
+    
+    jt = jt+1;
 end
 
 out.final_positions = x;
@@ -213,7 +211,7 @@ end
     end
 
     function em=writeev(em,x)
-        em(ceil(jt/skipw),:)=mean(x,1);
+        em(ceil(jt+1/(skipw+1)),:)=mean(x,1);
     end
 
     function nothing2(~,~)
