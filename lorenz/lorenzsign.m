@@ -11,12 +11,15 @@ function [s,sstr]=lorenzsign(rho,N)
 %
 %   [S,SSTR] = LORENZSIGN(RHO,N) returns in s a logical N-row long
 %   array and in sstr the same array split in substrings of fixed lenght to
-%   improve readibility truncating the last k element, k=mod(N,sstrl).
+%   to improve readibility
 %
 %   Expected runtime r with console output suppressed by ;
-%   if    rho<470/19      r < 1e-3 s
+%   if    rho < 470/19    r < 1e-3 s
 %   else                  r < 4e-3*N s
+%   Runtime is independent from rho value.
 %   (Extimated with MATLAB 2019a, sum(bench)=2.395+-0.008)
+%
+%   Andrea Lanterna - 819862
 
 narginchk(2,2);
 
@@ -35,7 +38,7 @@ elseif rho < 470/19
 else
     % Display warning for huge rho values
     if rho > 1e7
-        % For rho > 1e7 the part of the function that enumerates events
+        % For rho > 1e7 the part of the function that enumerates events has
         % unexpected behaviour, namely it stops the ode solver too late.
         % The function still shows the pseudo-periodic behaviour expected
         % for large values of rho, but it can not guarantee the
@@ -70,9 +73,6 @@ end
 
 if nargout>1 %sstr is parsed only if needed
     sstr=regexp(sprintf('%d', s), sprintf('\\w{1,%d}', sstrl), 'match')';
-    if size(sstr{end},2)<sstrl
-        sstr(end)=[];
-    end
 end
 
     function [value,isterminal,direction] = localy1max(~,y,A)
@@ -82,25 +82,27 @@ end
     % is a zero cross of the derivative, calculated internally by odeevents
     % , the second one is a counter reduced by one every time the function
     % reaches a local critical point. 
-    % This function is intentend to be nested into lorenzsign.
+    % This function is intendend to be nested into lorenzsign.
     
-    ydot = lorenzeqn(y,y,A); %The first entry is only a placeholder
+    ydot = lorenzeqn(0,y,A); %The first entry is only a placeholder
     
     if mod(j,5)==0
         % 5 is a sampling value obtained experimentally, supposed to be
         % good in the range 470/19 < rho < 1e7. Sampling is aimed to avoid
-        % false positives caused by numerical noise.
+        % false positives caused by numerical noise and roundoff errors.
         
-        nd=y(1)-py1; % Evaluates the difference between the the current 
+        nd=y(1)-py1; % Evaluates the difference between the current 
                      % y(1) and the previous one
         if pd*nd<0
             % If the sign changes beetween the current and the previous
             % difference, then a local critical point is reached
             k=k-1;
         end
+        
         % Saves the current values for the next cycle
         pd=nd;
         py1=y(1);
+        
     end
     
     j=j+1;
@@ -112,7 +114,7 @@ end
     end
 
 end
-
+    
 function ydot = lorenzeqn(~,y,A)
 %LORENZEQN  Equation of the Lorenz chaotic attractor.
 %   ydot = lorenzeqn(t,y,A).

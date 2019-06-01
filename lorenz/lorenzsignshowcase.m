@@ -1,4 +1,7 @@
 function lorenzsignshowcase
+%LORENZSINGSHOWCASE documents the behaviour of lorenzsign by comparing it
+%to lorenzsignp.p
+
 spv = [99.65 100.5 160 350]; %Sparrow's periodic orbits rho values
 grv = [20 24 25 28 40 80 95 97]; % Given non-periodic rho values
 
@@ -7,6 +10,7 @@ fprintf(['The Lorenz attractor is a chaotic system. As natural \n', ...
     '  evaluating the signature can produce different results\n', ...
     '  for a generic value of rho. However for some values the \n', ...
     '  trajectory is periodic. Some of this values are:\n\n']);
+
 
 disp(spv);
 
@@ -39,7 +43,7 @@ fprintf(['If rho is much greater than the other parameters, e.g.\n', ...
 
 askforuseraction;
 
-[~,ppb]=lorenzsigneskere(1e5,60*14);
+[~,ppb]=lorenzsign(1e5,60*15);
 fprintf('\n------------------   Signature   ------------------\n');
 disp(cell2mat(ppb));
     
@@ -49,11 +53,11 @@ pause;
 
 function lorenztester(rho)
 ratio=rho;
-for k=2:3
-    fprintf('********************\nIf N==%d\n********************\n',10^k);
+for k=1:14:15
+    fprintf('********************\nIf N==%d\n********************\n',60*k);
     for c=1:size(rho,2)
         fprintf('\n          Rho==%d\n\n',rho(c));
-        [ratio(c),ssm,ssp]=lorenzcompare(rho(c),10^k);
+        [ratio(c),ssm,ssp]=lorenzcompare(rho(c),60*k);
         fprintf('\n------------------   Signature   ------------------\n');
         disp(cell2mat(ssm));
         fprintf('\n---------------   Given signature   ---------------\n');
