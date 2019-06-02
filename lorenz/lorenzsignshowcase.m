@@ -9,16 +9,13 @@ fprintf(['The Lorenz attractor is a chaotic system. As natural \n', ...
     '  consequence of this fact even a small difference in\n', ...
     '  evaluating the signature can produce different results\n', ...
     '  for a generic value of rho. However for some values the \n', ...
-    '  trajectory is periodic. Some of this values are:\n\n']);
-
+    '  trajectory is periodic. For Sparrow[1982] they are:\n\n']);
 
 disp(spv);
 
 fprintf(['We can observe that for this values we obtain the same\n', ...
-    '  signature regardless of the method or the lenght.\n', ...
-    'If ratio is equal to one, this means that the sequence of\n', ...
-    '  symbols is identical, if it is equal to zero it means that\n', ...
-    '  none of the symbols is equal.\n\n']);
+    '  signature regardless of the method or the lenght. We are\n', ...
+    '  also able to determine the period.\n\n']);
 
 askforuseraction;
 
@@ -43,31 +40,43 @@ fprintf(['If rho is much greater than the other parameters, e.g.\n', ...
 
 askforuseraction;
 
-[~,ppb]=lorenzsign(1e5,60*15);
+[pb,ppb]=lorenzsign(1e5,60*15);
 fprintf('\n------------------   Signature   ------------------\n');
 disp(cell2mat(ppb));
+per=islorenzsignper(pb,60*15,40);
+fprintf('\nThe signature shows a period of lenght = %d \n',per);
     
 function askforuseraction
 fprintf("Press any key to continue...\n");
 pause;
 
 function lorenztester(rho)
-ratio=rho;
-for k=1:14:15
+
+for k=2:13:15 %Ask for 2 and 15 lines of signature
     fprintf('********************\nIf N==%d\n********************\n',60*k);
     for c=1:size(rho,2)
         fprintf('\n          Rho==%d\n\n',rho(c));
-        [ratio(c),ssm,ssp]=lorenzcompare(rho(c),60*k);
+        [sm,ssm,ssp,fd]=lorenzcompare(rho(c),60*k);
         fprintf('\n------------------   Signature   ------------------\n');
         disp(cell2mat(ssm));
         fprintf('\n---------------   Given signature   ---------------\n');
         disp(ssp);
-        fprintf('\nRatio==%d\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n',ratio(c));
+        if isempty(fd)
+            fprintf('\nAll the elements of the signatures are equal\n');
+        else
+            fprintf('\nSignatures start to differ from element #%d\n',fd);
+        end
+        per=islorenzsignper(sm,60*k,40);
+        fprintf(' \nThe signature shows a period %d elements long\n',per);
     end
 end
 
-function [r,ssm,ssp]=lorenzcompare(rho,N)
-tic;[sm,ssm]=lorenzsign(rho,N);toc
-tic;[sp,ssp]=lorenzsignp(rho,N);toc
-s=sum(sm==sp);
-r=s/size(sm,1);
+function [sm,ssm,ssp,fd]=lorenzcompare(rho,N)
+% LORENZCOMPARE given a rho and a lenght, returns
+% -the signature computed by lorenzsign.m
+% -the easy-readable version of the signatures computed by lorenzsign and
+%   lorenzsignp
+% -If exists, the first element that differs in the signatures.
+[sm,ssm]=lorenzsign(rho,N);     % lorenzsign.m signature
+[sp,ssp]=lorenzsignp(rho,N);    % lorenzsignp.p signature
+fd=find((sm~=sp),1); % first different element

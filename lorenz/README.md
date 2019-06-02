@@ -1,2 +1,5 @@
-# fiscom190531
-Compiti di fisica computazionale per il 31 maggio 2019
+#Esercizio 1
+L'esercizio è svolto su tre file:
+- lorenzsign.m emula il comportamento di lorenzsign.p dato;
+- lorenzsignshowcase.m compara i due programmi e usa al suo interno
+- islorenzsignper.m trova periodicità nelle segnature.
