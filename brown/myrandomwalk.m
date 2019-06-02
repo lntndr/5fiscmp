@@ -22,6 +22,8 @@ dflt.plotframe_skips = 0;
 % my fields
 dflt.write_com_skips = 0;
 dflt.space_is_phase_space = false;
+dflt.stop_at_equilibrium = false;
+dflt.sigma = 1;
 
 %% input handling and checks
 
@@ -71,10 +73,12 @@ end
 
 skipw = in.write_evolution_skips;
 sps = in.space_is_phase_space;
+sae = in.stop_at_equilibrium;
+sgm = in.sigma;
 
 % custom settings consistency checks
 
-if skipf == Inf && nt == Inf
+if skipf == Inf && nt == Inf && ~sae
     error("The function thus set would cause an infinite loop.");
 end
 
@@ -84,14 +88,16 @@ end
 if sps
     pickbound=@xdotbound;
     stepper=@phspacestep;
+    eqcheck=@phaseeq;
 else
     pickbound=@xbound;
     stepper=@spacestep;
+    eqcheck=@spaceeq;
 end
 
-% defining variables only in nested function is deprecated in Matlab 2019a
-Io=0;
-Ie=0;
+if ~sae 
+    eqcheck=@dontcheckeq;
+end
 
 % allocate vector for store center of mass and mean velocity evolution
 if skipw < Inf
@@ -122,9 +128,14 @@ if skipf < nt
         'units','normalized','position',[.45 .01 .1 .05]);
 end
 
+% Service embedded variables
+Io=0;
+Ie=0;
+eq_period=10/dt;
+ateq=false;
 jt = 0;
 
-while jt < nt
+while jt < nt && ~ateq
     
     t = jt*dt;
     
@@ -138,7 +149,7 @@ while jt < nt
            x=pickbound(x);
        end
     end
-        if mod(jt+1,skipf+1) == 0
+    if mod(jt+1,skipf+1) == 0
         h.XData = x(:,1);
         h.YData = x(:,2);
         if dim == 3
@@ -154,17 +165,26 @@ while jt < nt
         em=register(em,x);
     end
     
-    %make a step
+    ateq=eqcheck(0);
     
-    x=stepper(x);
+    %make a step
+    if ~ateq
+        x=stepper(x);
+    end
     
     jt = jt+1;
+    
 end
 
+
 out.final_positions = x;
+
 if skipw < Inf
     out.evolution = em;
 end
+
+out.stopped_at_eq = ateq;
+
 out.in = in;
 
 if skipf < nt
@@ -196,10 +216,9 @@ end
     end
 
     function x=phspacestep(x)
-        
-          xb=feval(in.step_algorithm,B,t,x(:,2:2:end),dt);
-          x(:,1:2:end)=x(:,1:2:end)+x(:,2:2:end)*dt;
-          x(:,2:2:end)=xb + sqrt(dt)*rj(t,xb);
+        xb=feval(in.step_algorithm,B,t,x(:,2:2:end),dt);
+        x(:,1:2:end)=x(:,1:2:end)+x(:,2:2:end)*dt;
+        x(:,2:2:end)=xb + sqrt(dt)*rj(t,xb);
     end
 
     function em=writeev(em,x)
@@ -208,6 +227,35 @@ end
 
     function nothing2(~,~)
         
+    end
+
+    function eq=phaseeq(~)
+        curr=ceil(jt+1/(skipw+1));
+        if curr > eq_period
+            if abs(mean(em(curr-eq_period:curr,2:2:end))) < sgm && ...
+                    abs(max(em(curr-eq_period:curr,2:2:end))) < sgm
+                eq=true;
+                % Cut allocated but unused space
+                em(curr+1:end,:)=[];
+            else
+                eq=false;
+            end
+        else
+            eq = false;
+        end
+    end
+
+    function eq=spaceeq(~)
+        if abs(mean(em(curr-eq_period:curr,:),1)) < sgm && ...
+            abs(max(em(curr-eq_period:curr,:),1)) < sgm
+            eq=true;
+        else
+            eq=false;
+        end
+    end
+
+    function eq=dontcheckeq(~)
+        eq=0;
     end
 
 end

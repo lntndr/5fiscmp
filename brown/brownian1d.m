@@ -13,10 +13,11 @@ dflt.friction_coeff=1;
 dflt.kT_over_mass=1;
 dflt.random_kicks=@(t,x)randn(size(x));
 dflt.time_step=1e-3;
-dflt.time_span=60;
+dflt.time_span=100;
 dflt.step_algorithm='rk4';
 dflt.plotframe_skips = 24;
 dflt.write_evolution_skips = 0;
+dflt.stop_at_equilibrium = true;
 
 % input handling and checks
 
@@ -71,9 +72,10 @@ gam = in.friction_coeff;
 D = in.kT_over_mass/gam;
 h = in.height;
 
+% Fixed input setting
+in.sigma=sqrt(in.time_step*2*in.kT_over_mass);
 in.initial_positions=[feval(in.initial_positions,N,h), ...
     feval(in.initial_velocities,N)];
-
 in.drift_field = @(t,x) -gam*x+in.acceleration_field(t,x);
 in.random_jumps = @(t,x) sqrt(2*D)*gam*in.random_kicks(t,x);
 
