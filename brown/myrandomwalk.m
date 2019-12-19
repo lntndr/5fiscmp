@@ -1,4 +1,6 @@
 function out = myrandomwalk(in)
+% MYRANDOMWALK is a custom version of randomwalk with added functionality
+% as phase space managing and evolution saving.
 % n-dimensional random walk
 % in = randomwalk returns the default setup as a struct.
 % out = randomwalk(in) returns the structure out with field 
@@ -19,11 +21,11 @@ dflt.time_span = inf;
 dflt.step_algorithm = 'rk4';
 dflt.plotframe_skips = 0;
 
-% my fields
+% Custom fields
 dflt.write_com_skips = 0;
 dflt.space_is_phase_space = false;
 dflt.stop_at_equilibrium = false;
-dflt.sigma = 1;
+dflt.sigma = 1; % Statistical equilibrium threshold
 
 %% input handling and checks
 
@@ -129,10 +131,10 @@ if skipf < nt
 end
 
 % Service embedded variables
-Io=0;
-Ie=0;
+Io=0; % Logical vector for particles passing bo boundaries
+Ie=0; % Logical vector for particles passing be boundaries
 eq_period=10/dt;
-ateq=false;
+ateq=false; %system is at equilibrium
 jt = 0;
 
 while jt < nt && ~ateq
@@ -196,7 +198,7 @@ end
     function x=xbound(x)
         if bc(jo)
             Io = x(:,jdim) < box(jo);
-            x(Io,jdim) = -x(Io,jdim) + 2*box(jo);
+            x(Io,jdim) = -x(Io,jdim) + 2*box(jo); 
         end
         if bc(je)
             Ie = x(:,jdim) > box(je);
@@ -206,6 +208,7 @@ end
 
     function x=xdotbound(x)
         if sum(Io|Ie)>0 % Some particle has bounced and velocities
+            % change sign as consequence
             x(Io|Ie,jdim) = -x(Io|Ie,jdim);
         end
     end
@@ -216,8 +219,10 @@ end
     end
 
     function x=phspacestep(x)
+        %Evaluates analytical forces
         xb=feval(in.step_algorithm,B,t,x(:,2:2:end),dt);
         x(:,1:2:end)=x(:,1:2:end)+x(:,2:2:end)*dt;
+        %Adds random component
         x(:,2:2:end)=xb + sqrt(dt)*rj(t,xb);
     end
 
@@ -230,8 +235,11 @@ end
     end
 
     function eq=phaseeq(~)
-        curr=ceil(jt+1/(skipw+1));
-        if curr > eq_period
+        curr=ceil(jt+1/(skipw+1)); %current point
+        if curr > eq_period %check if in the last eq_period
+                            %speed has been under the variance of random
+                            %steps for every single step and also in the
+                            %mean value (a bit like autovelox + tutor)                          
             if abs(mean(em(curr-eq_period:curr,2:2:end))) < sgm && ...
                     abs(max(em(curr-eq_period:curr,2:2:end))) < sgm
                 eq=true;
@@ -245,10 +253,11 @@ end
         end
     end
 
-    function eq=spaceeq(~)
-        if abs(mean(em(curr-eq_period:curr,:),1)) < sgm && ...
-            abs(max(em(curr-eq_period:curr,:),1)) < sgm
+    function eq=spaceeq(~) %Not tested, basically a placeholder
+        if abs(mean(diff(em(curr-eq_period:curr,:)),1)) < sgm
             eq=true;
+            % Cut allocated but unused space
+            em(curr+1:end,:)=[];
         else
             eq=false;
         end

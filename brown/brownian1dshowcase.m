@@ -1,4 +1,9 @@
 function brownian1dshowcase(b1din)
+% BROWNIAN1DSHOWCASE gives a representation to the data made from
+% browniand1dbench by fitting the final distributions, the evolution of
+% the mean speed and of the center of mass and correlating the parameters
+% gamma and height to the time needed to reach equilibrium.
+
 %% basic check input
 if ~isstruct(b1din) 
     error('Data must be a struct made by minibench.m');
@@ -11,7 +16,7 @@ end
 %% Plot final distributions
 
 % Allocate space for storing fit in.results
-for j=1:length(b1din.results)-120
+for j=1:length(b1din.results)
     figure('Name',strcat('g=', ...
         num2str(b1din.results{j}.in.friction_coeff),...
         ' h=',num2str(b1din.results{j}.in.height)))
@@ -48,7 +53,7 @@ for j=1:length(b1din.results)-120
             neqtoc=b1din.results{j}.in.time_span;
             title(sprintf('Evolution until t=%d; Eq. not reached',neqtoc));
         end
-        xlabel('t');
+        xlabel('Steps');
         plot(b1din.results{j}.evolution);
         yline(b1din.bench_in.kT_over_mass,':');
         legend({'$x$','$\dot{x}$','$\frac{K_BT}{m}$'},...
@@ -56,4 +61,15 @@ for j=1:length(b1din.results)-120
         hold off
 end
 
-%% Study correlation between t, gamma and
+%% Study correlation between t, gamma and height
+
+tplot=b1din.eq_timemat;
+nanindex=isnan(tplot(:,3)); 
+tplot(nanindex,:)=[]; %removes data when eq is not reached
+x=tplot(:,1)./tplot(:,2);tplot(:,1);
+figure
+hold on
+title("Correlation beetween gamma/height and time to equilibrium");
+scatter(x,tplot(:,3),'filled');
+hold off
+

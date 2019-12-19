@@ -1,4 +1,7 @@
 function out=brownian1dbench(friction,height)
+%BROWNIAN1DBENCH saves in a structure the brownian1d results for the
+%friction and height values given in input as row vectors. 
+
 lh=length(height);
 lf=length(friction);
 
@@ -17,10 +20,10 @@ for k=1:lf
     in.friction_coeff=friction(k);
     for j=1:lh
         index=lf*(k-1)+j;
-        fprintf("Tentativo g=%d h=%d\n",friction(k),height(j));
+        fprintf("Evaluating g=%d,h=%d\n",friction(k),height(j));
         % Set height
         in.height=height(j);
-        tic;results{index}=brownian1d(in);toc
+        results{index}=brownian1d(in);
         if results{index}.stopped_at_eq
             tmat(index,:)=[friction(k),height(j), ...
                 length(results{index}.evolution)/in.timestep];

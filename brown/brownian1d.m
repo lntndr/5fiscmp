@@ -66,13 +66,12 @@ if isfield(in,'viewbox_size')
 end
 
 %short variables fill
-
 N = in.number_of_particles;
 gam = in.friction_coeff;
 D = in.kT_over_mass/gam;
 h = in.height;
 
-% Fixed input setting
+% myrandomwalk input indirectly determined by brownian1d input
 in.sigma=sqrt(in.time_step*2*in.kT_over_mass);
 in.initial_positions=[feval(in.initial_positions,N,h), ...
     feval(in.initial_velocities,N)];
